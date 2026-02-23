@@ -1,0 +1,423 @@
+from IPython.display import display, HTML
+
+html_code = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Diluição HMG - INTS</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --secondary: #f8f9fa;
+            --text: #333;
+            --warning: #d9534f;
+            --success: #28a745;
+            --border: #dee2e6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .search-container {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            background: white;
+            padding: 10px 0;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            transition: box-shadow 0.3s;
+        }
+
+        #search-input:focus {
+            box-shadow: 0 0 8px rgba(0, 86, 179, 0.3);
+        }
+        
+        .list-title {
+            color: #555;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .drug-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            transition: transform 0.2s;
+        }
+
+        .card-header {
+            background-color: var(--secondary);
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--primary);
+            width: 100%;
+            text-align: left;
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .card-header:hover {
+            background-color: #e2e6ea;
+        }
+
+        .drug-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .badge-renal-sim { background-color: var(--warning); }
+        .badge-renal-nao { background-color: var(--success); }
+        .badge-via { background-color: #6c757d; }
+
+        .card-body {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .card.active .card-body {
+            display: block;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .info-item { margin-bottom: 10px; }
+
+        .label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #666;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .alert-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            grid-column: 1 / -1;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Guia de Diluição HMG - INTS</h1>
+        <p class="subtitle">Baseado no Manual de Diluição de Medicamentos Injetáveis</p>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Digite o nome do medicamento...">
+        </div>
+    </header>
+
+    <h2 id="list-title" class="list-title">Principais Medicamentos</h2>
+
+    <div id="drug-list" class="drug-list"></div>
+    <div id="no-results" class="no-results">Nenhum medicamento encontrado.</div>
+</div>
+
+<script>
+    // DADOS DO MANUAL (Extraídos do Sumário)
+    // Os 10 principais estão marcados com isTop10: true
+    const drugs = [
+        { name: "Acetilcisteína", concentration: "100 mg/mL (3mL)", via: "EV/Inalatório", reconstitution: "Não necessita", diluent: "SG 5% ou SF 0,9%", stability_diluted: "Uso imediato", renal_adjust: "Não", infusion_time: "Ver protocolo intoxicação", obs: "Iniciar até 8h após ingestão paracetamol." },
+        { name: "Aciclovir", concentration: "250 mg pó F/A", via: "EV", reconstitution: "AD 10 mL", diluent: "SF 0,9% ou SG 5%", stability_diluted: "12 horas TA", renal_adjust: "Sim", infusion_time: "Mínimo 60 minutos", obs: "Não refrigerar após reconstituição." },
+        { name: "Ácido tranexâmico", concentration: "50 mg/mL", via: "EV", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24 horas TA", renal_adjust: "Sim", infusion_time: "Injeção lenta (50 mg/min)", obs: "Administração rápida pode causar hipotensão." },
+        { name: "Adenosina", concentration: "3 mg/mL", via: "EV", reconstitution: "Não necessita", diluent: "Não diluir", stability_diluted: "Descartar sobras", renal_adjust: "Não", infusion_time: "Bolus rápido (1 a 2 seg)", obs: "Irrigar com 20mL de SF 0,9% após." },
+        { name: "Alfaepoetina", concentration: "4000 UI", via: "SC", reconstitution: "Vem com diluente", diluent: "-", stability_diluted: "-", renal_adjust: "Não", infusion_time: "-", obs: "-" },
+        { name: "Alteplase", concentration: "50 mg/50 mL F/A", via: "EV", reconstitution: "Diluente próprio", diluent: "SF 0,9%", stability_diluted: "8 horas TA", renal_adjust: "Não", infusion_time: "Conforme protocolo de IAM/AVC", obs: "Dose máxima 100 mg." },
+        { name: "Amicacina, Sulfato", concentration: "500 mg/2mL", via: "EV ou IM", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24 horas TA", renal_adjust: "Sim", infusion_time: "30 a 60 minutos", obs: "Ajustar dose conforme clearance." },
+        { name: "Aminofilina", concentration: "24mg/ml amp 10 mL", via: "EV", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24 horas TA", renal_adjust: "Não", infusion_time: "20 a 30 minutos", obs: "Não exceder 25mg/min." },
+        
+        /* TOP 10 - INÍCIO */
+        { name: "Amiodarona", isTop10: true, concentration: "50 mg/3mL", via: "EV", reconstitution: "Não necessita", diluent: "SG 5% (Exclusivamente)", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Ataque: 20 a 30 min. Manutenção: 24h", obs: "Diluir sempre em SG 5%. Concentrações > 2mg/mL preferir acesso central." },
+        { name: "Ceftriaxona", isTop10: true, concentration: "1g F/A", via: "EV ou IM", reconstitution: "EV: 10mL AD / IM: 3,5mL Lidocaína", diluent: "SF 0,9% ou SG 5%", stability_diluted: "6h a 25°C", renal_adjust: "Não", infusion_time: "EV Direto (2-4 min) ou Infusão (30 min)", obs: "Não misturar com soluções contendo cálcio." },
+        { name: "Dipirona Sódica", isTop10: true, concentration: "1 g/2 mL", via: "EV ou IM", reconstitution: "Não necessita", diluent: "SF 0,9% ou AD", stability_diluted: "Uso imediato", renal_adjust: "Não", infusion_time: "Lentamente (1mL/min)", obs: "Dose máxima diária adultos: 10mL (5g)." },
+        { name: "Dobutamina, Cloridrato", isTop10: true, concentration: "12,5 mg/mL (20 mL)", via: "EV", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24 horas TA", renal_adjust: "Não", infusion_time: "Infusão Contínua", obs: "Uso obrigatório de bomba de infusão. Não congelar." },
+        { name: "Epinefrina", isTop10: true, concentration: "1 mg/mL (1 mL)", via: "SC, IM ou EV", reconstitution: "Não necessita", diluent: "SG 5% ou SF 0,9%", stability_diluted: "24 horas TA", renal_adjust: "Não", infusion_time: "Bolus ou Contínua", obs: "Para infusão contínua, administrar em acesso venoso central." },
+        { name: "Fentanila Citrato", isTop10: true, concentration: "0,05 mg/mL (10 mL)", via: "EV", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "Uso contínuo", renal_adjust: "Sim", infusion_time: "Infusão Contínua", obs: "Administrar em bomba de infusão. Ajustar em insuficiência renal." },
+        { name: "Furosemida", isTop10: true, concentration: "10 mg/mL (2 mL)", via: "EV ou IM", reconstitution: "Não necessita", diluent: "SF 0,9%", stability_diluted: "24 horas TA", renal_adjust: "Sim", infusion_time: "Bolus lento ou Infusão (máx 4mg/min)", obs: "Proteger da luz. Não refrigerar a solução diluída." },
+        { name: "Midazolam", isTop10: true, concentration: "50mg/10mL ou 15mg/3mL", via: "EV ou IM", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24 horas TA", renal_adjust: "Não", infusion_time: "EV direto (2 a 5 min) ou Contínua", obs: "Infusão contínua deve ser administrada em bomba." },
+        { name: "Norepinefrina, Hemitartarato", isTop10: true, concentration: "2 mg/mL (4 mL)", via: "EV", reconstitution: "Não necessita", diluent: "SG 5%", stability_diluted: "24h TA (Protegida da luz)", renal_adjust: "Não", infusion_time: "Infusão Contínua", obs: "Administração em bomba de infusão. Acesso central recomendado." },
+        { name: "Propofol", isTop10: true, concentration: "10 mg/mL (20 mL)", via: "EV", reconstitution: "Não necessita", diluent: "SG 5%", stability_diluted: "12h TA (Puro) / 6h TA (Diluído)", renal_adjust: "Não", infusion_time: "Infusão Contínua", obs: "Diluições não devem exceder a proporção de 1:5." },
+        /* TOP 10 - FIM */
+
+        { name: "Ampicilina", concentration: "1g F/A", via: "EV ou IM", reconstitution: "EV: 5-10mL AD", diluent: "SF 0,9% ou SG 5%", stability_diluted: "8 horas TA", renal_adjust: "Não", infusion_time: "15-30 minutos", obs: "Administração rápida pode causar convulsões." },
+        { name: "Ampicilina 2g + Sulbactam 1g", concentration: "F/A", via: "EV ou IM", reconstitution: "6 mL AD", diluent: "SF 0,9% ou SG 5%", stability_diluted: "8h em SF / 4h em SG", renal_adjust: "Sim", infusion_time: "15 a 30 minutos", obs: "Ajuste renal necessário." },
+        { name: "Anidulafungina", concentration: "100mg F/A", via: "EV", reconstitution: "AD", diluent: "SF 0,9% ou SG 5%", stability_diluted: "2 horas TA", renal_adjust: "Não", infusion_time: "1.1 mg/min", obs: "Não administrar em bolus." },
+        { name: "Atropina, Sulfato", concentration: "0,25 mg/mL", via: "EV/IM/SC", reconstitution: "Não necessita", diluent: "SF 0,9%", stability_diluted: "Imediato", renal_adjust: "Não", infusion_time: "Direto em 1 min", obs: "Administração rápida." },
+        { name: "Azitromicina", concentration: "500mg F/A", via: "EV", reconstitution: "AD 4,8 mL", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Infusão", obs: "Apenas por infusão IV." },
+        { name: "Bicarbonato 8,4%", concentration: "10 mL e 250 mL", via: "EV", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "1mEq/kg/h", obs: "Medicamento vesicante." },
+        { name: "Bromoprida", concentration: "5 mg/mL 2mL", via: "EV/IM", reconstitution: "Não necessita", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "Lento (3 min)", obs: "Evitar injeção rápida (causa ansiedade)." },
+        { name: "Cefazolina", concentration: "1g F/A", via: "EV/IM", reconstitution: "AD", diluent: "SF 0,9% ou SG 5%", stability_diluted: "12h TA", renal_adjust: "Sim", infusion_time: "30-60 min", obs: "Ajuste em IR." },
+        { name: "Cefepima", concentration: "1g e 2G F/A", via: "EV/IM", reconstitution: "AD", diluent: "SF 0,9% ou SG 5%", stability_diluted: "12h TA", renal_adjust: "Sim", infusion_time: "30 min", obs: "Ajuste renal necessário." },
+        { name: "Clindamicina, fosfato", concentration: "600 mg/mL 4 mL", via: "EV/IM", reconstitution: "Não necessita", diluent: "SF 0,9%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "30-60 min", obs: "Não fazer EV direto." },
+        { name: "Clonidina", concentration: "150 mcg/mL 1 mL", via: "EV/IM", reconstitution: "Não necessita", diluent: "SF 0,9%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Superior a 5 min", obs: "Aplicação IM deve ser profunda." },
+        { name: "Cloreto de Cálcio 10%", concentration: "amp 10 mL", via: "EV", reconstitution: "Não necessita", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Lento", obs: "Vesicante (preferir acesso central)." },
+        { name: "Cloreto de Sódio 20%", concentration: "amp 10 mL", via: "EV", reconstitution: "Não", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "1mEq/kg/h", obs: "NUNCA aplicar EV direto." },
+        { name: "Clorpromazina", concentration: "5 mg/mL 5 mL", via: "IM", reconstitution: "Não", diluent: "Não", stability_diluted: "-", renal_adjust: "Não", infusion_time: "IM profundo", obs: "Aplicação profunda no glúteo." },
+        { name: "Deslanosídeo", concentration: "0,2 mg/mL 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF 0,9% ou SG 5%", stability_diluted: "Uso imediato", renal_adjust: "Não", infusion_time: "Lento", obs: "Diluição 1:4 se necessário." },
+        { name: "Cloreto de Potássio 19,1%", concentration: "10 mL", via: "EV", reconstitution: "Não", diluent: "SF 0,9% ou SG 5%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Máx 10mEq/h periférico", obs: "NUNCA EV direto. Usar bomba." },
+        { name: "Dexametasona", concentration: "4 mg/mL 2,5 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "Lento", obs: "Choque apenas via EV." },
+        { name: "Dexmedetomidina", concentration: "200 mcg/2mL amp", via: "EV", reconstitution: "Não", diluent: "SF 0,9%", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Bomba de Infusão", obs: "Não administrar em bolus (causa bradicardia)." },
+        { name: "Dextrocetamina", concentration: "50 mg/ml 2mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Lento", obs: "Infusão 2 a 7 mcg/kg/min." },
+        { name: "Diazepam", concentration: "5 mg/mL 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "Descartar sobras", renal_adjust: "Não", infusion_time: "Lento (5mg/min)", obs: "Acesso a reanimação." },
+        { name: "Diclofenaco de Sódio", concentration: "75 mg/3 mL", via: "IM", reconstitution: "Não", diluent: "-", stability_diluted: "-", renal_adjust: "Sim", infusion_time: "IM Profundo", obs: "Contraindicado na insuficiência renal." },
+        { name: "Dimenidrinato + Piridoxina", concentration: "amp 10 mL", via: "EV", reconstitution: "Não", diluent: "SF 0,9%", stability_diluted: "Imediato", renal_adjust: "Não", infusion_time: "Lento (min 3 min)", obs: "Dose reduzida para crianças." },
+        { name: "Dopamina, Cloridrato", concentration: "5 mg/mL amp 10 mL", via: "EV", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Infusão contínua", obs: "Fotossensível." },
+        { name: "Escopolamina, Butilbrometo", concentration: "20 mg/mL amp 1 mL", via: "EV/IM/SC", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Lento 2-3 min", obs: "Diluir 1 ampola em 20mL." },
+        { name: "Escopolamina + Dipirona", concentration: "amp 5 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Lento (1mL/min)", obs: "IM profunda." },
+        { name: "Etilefrina", concentration: "10mg/mL 1 mL", via: "EV/IM/SC", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "-", renal_adjust: "Não", infusion_time: "0,4 mg/min (Adulto)", obs: "Usada em colapso circulatório." },
+        { name: "Etomidato", concentration: "2mg/mL amp 10 mL", via: "EV", reconstitution: "Não", diluent: "Puro", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Lento", obs: "Associar Fentanil 1-2min antes." },
+        { name: "Fenitoína Sódica", concentration: "50 mg/mL amp 5 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF 0,9%", stability_diluted: "Uso imediato", renal_adjust: "Não", infusion_time: "15-30 min", obs: "Glicosado precipita o produto." },
+        { name: "Fenobarbital", concentration: "100 mg/mL amp 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "3-5 min (Bolus)", obs: "Máx 60mg/min." },
+        { name: "Fluconazol", concentration: "2 mg/mL bolsa 100 mL", via: "EV", reconstitution: "Não", diluent: "Puro", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "60-120 min", obs: "Ajuste após diálise." },
+        { name: "Flumazenil", concentration: "0,5 mg/5mL amp 5 mL", via: "EV", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "15-30 seg", obs: "Antídoto Benzodiazepínicos." },
+        { name: "Gentamicina, Sulfato", concentration: "80 mg/mL amp 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "30-120 min", obs: "Ajuste na disfunção renal." },
+        { name: "Glicose 50%", concentration: "amp 10 mL", via: "EV", reconstitution: "Não", diluent: "AD", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Lento", obs: "Avaliar glicemia capilar antes." },
+        { name: "Haloperidol", concentration: "5 mg/mL amp 1 mL", via: "IM", reconstitution: "Não", diluent: "Não", stability_diluted: "-", renal_adjust: "Não", infusion_time: "IM Profundo", obs: "Máx 3mL por sítio." },
+        { name: "Heparina Sódica", concentration: "5.000 UI/mL 5 mL", via: "EV/SC", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "Infusão contínua", obs: "Agitar bolsa a cada 4h." },
+        { name: "Hidrocortisona", concentration: "100mg F/A", via: "EV/IM", reconstitution: "2 mL AD", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "3-5min (Bolus)", obs: "Restrição hídrica: máx 25mg/mL." },
+        { name: "Insulina NPH Humana", concentration: "100UI/mL 10 mL", via: "SC", reconstitution: "Não", diluent: "-", stability_diluted: "28 dias (geladeira)", renal_adjust: "Não", infusion_time: "S/C", obs: "Descartar após 28 dias." },
+        { name: "Insulina Regular", concentration: "100Ul/mL 10 mL", via: "EV/SC", reconstitution: "Não", diluent: "SF 0,9%", stability_diluted: "6h TA", renal_adjust: "Não", infusion_time: "Infusão Contínua", obs: "Saturar equipo 30min antes." },
+        { name: "Levofloxacino", concentration: "5 mg/mL bolsa 100 mL", via: "EV", reconstitution: "Não", diluent: "Pronto", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "60 a 90 min", obs: "Pronto para uso." },
+        { name: "Lidocaína 20mg/ml + Epinefrina", concentration: "F/A 20 mL", via: "Locorregional", reconstitution: "Não", diluent: "Puro", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Local", obs: "Anestesia locorregional." },
+        { name: "Lidocaína sem vaso", concentration: "20mg/mL F/A 20 mL", via: "Locorregional", reconstitution: "Não", diluent: "Puro", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Local", obs: "Dose máxima 300mg." },
+        { name: "Meropenem", concentration: "1g F/A", via: "EV", reconstitution: "20mL AD", diluent: "SF/SG", stability_diluted: "4h TA", renal_adjust: "Sim", infusion_time: "15-30 min", obs: "Ajuste na disfunção renal." },
+        { name: "Metadona", concentration: "10 mg/mL amp 1 mL", via: "IM/SC", reconstitution: "Não", diluent: "Puro", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "IM/SC", obs: "Tratamento dor e dependência." },
+        { name: "Metoclopramida", concentration: "5 mg/mL amp 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "-", renal_adjust: "Não", infusion_time: "3 minutos", obs: "Administração lenta." },
+        { name: "Metoprolol", concentration: "1 mg/mL amp 5 mL", via: "EV", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "12h TA", renal_adjust: "Sim", infusion_time: "Lento (2 min)", obs: "Ajuste para clearance < 60." },
+        { name: "Metronidazol", concentration: "5 mg/mL bolsa 100 mL", via: "EV", reconstitution: "Não", diluent: "Puro", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "30-60 min", obs: "Pronto para uso." },
+        { name: "Morfina, Sulfato", concentration: "10 mg/mL amp 1 mL", via: "EV/IM/Intratecal", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Lento (3-5 min)", obs: "Intratecal = sem conservante." },
+        { name: "Naloxona", concentration: "0,4 mg/mL 1mL", via: "EV/IM/SC", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Bolus (3-5 min)", obs: "Antídoto Opióides." },
+        { name: "Neostigmina", concentration: "0,5 mg/mL", via: "EV/IM/SC", reconstitution: "Não", diluent: "Puro", stability_diluted: "Uso imediato", renal_adjust: "Não", infusion_time: "Lento", obs: "Reversão bloqueio neuromuscular." },
+        { name: "Nitroglicerina", concentration: "5 mg/mL amp 5 mL", via: "EV", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Infusão Contínua", obs: "Frasco sem PVC." },
+        { name: "Nitroprussiato de Sódio", concentration: "25 mg/mL 2 mL", via: "EV", reconstitution: "Diluente próprio", diluent: "SG 5%", stability_diluted: "4h (Protegido)", renal_adjust: "Não", infusion_time: "Infusão Contínua", obs: "Fotossensível." },
+        { name: "Omeprazol", concentration: "40 mg F/A", via: "EV", reconstitution: "Diluente Próprio", diluent: "SF/SG", stability_diluted: "4h TA", renal_adjust: "Não", infusion_time: "20-30 min", obs: "Uso do diluente próprio é preferencial." },
+        { name: "Ondansetrona", concentration: "2 mg/mL amp 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "12h SF / 6h SG", renal_adjust: "Não", infusion_time: "Lento (2-5 min)", obs: "Antiemético." },
+        { name: "Oxacilina Sódica", concentration: "500 mg F/A", via: "EV/IM", reconstitution: "AD / SF", diluent: "SF/SG", stability_diluted: "6h TA", renal_adjust: "Não", infusion_time: "Lento (10 min)", obs: "Rápido causa convulsão." },
+        { name: "Piperacilina + Tazobactam", concentration: "4,5g F/A", via: "EV", reconstitution: "20mL AD", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "20-30 min", obs: "Ajuste na IR." },
+        { name: "Polimixicina B", concentration: "500.000 UI F/A", via: "EV/IM/Intratecal", reconstitution: "AD ou SF", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "60-90 min", obs: "IM causa dor severa." },
+        { name: "Prometazina", concentration: "25 mg/mL amp 2 mL", via: "IM", reconstitution: "Não", diluent: "Não", stability_diluted: "-", renal_adjust: "Não", infusion_time: "IM Profundo", obs: "Não usar EV ou SC." },
+        { name: "Rocurônio", concentration: "10 mg/mL 5 mL", via: "EV", reconstitution: "Não", diluent: "Puro ou SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Bolus ou Contínua", obs: "Bloqueador Neuromuscular." },
+        { name: "Solução de Manitol 20%", concentration: "bolsa 250 mL", via: "EV", reconstitution: "Não", diluent: "Pronto", stability_diluted: "-", renal_adjust: "Não", infusion_time: "Conforme prescrição", obs: "Não administrar com cristais." },
+        { name: "Sulfametoxazol + Trimetoprima", concentration: "amp 5 mL", via: "EV", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "6h (500mL)", renal_adjust: "Sim", infusion_time: "30-60 min", obs: "Ajuste na IR." },
+        { name: "Sulfato de Magnésio 10%", concentration: "amp 10 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "Uso Imediato", renal_adjust: "Não", infusion_time: "Lento", obs: "Risco de toxicidade." },
+        { name: "Suxametônio", concentration: "100 mg F/A", via: "EV/IM", reconstitution: "AD", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Bolus/Contínua", obs: "Risco hipertermia maligna." },
+        { name: "Terbutalina", concentration: "0,5 mg/mL amp 1mL", via: "EV/SC", reconstitution: "Não", diluent: "SG 5%", stability_diluted: "12h TA", renal_adjust: "Não", infusion_time: "20-30 gotas/min", obs: "Não diluir em soluções salinas." },
+        { name: "Tramadol, Cloridrato", concentration: "100 mg/2mL amp 2 mL", via: "EV/IM", reconstitution: "Não", diluent: "SF 0,9%", stability_diluted: "Descartar", renal_adjust: "Não", infusion_time: "Lento", obs: "Analgésico opióide." },
+        { name: "Vancomicina", concentration: "500 mg F/A", via: "EV", reconstitution: "10mL AD", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Sim", infusion_time: "60-120 min", obs: "Prevenção da 'Síndrome do Homem Vermelho'." },
+        { name: "Vasopressina", concentration: "20Ul/mL amp 1mL", via: "EV/IM/SC", reconstitution: "Não", diluent: "SF/SG", stability_diluted: "24h TA", renal_adjust: "Não", infusion_time: "Contínua / Bolus", obs: "Concentração máxima 1 UI/mL." },
+        { name: "Vitamina K", concentration: "10 mg/mL amp 1 mL", via: "IM", reconstitution: "Não", diluent: "Não", stability_diluted: "-", renal_adjust: "Não", infusion_time: "IM Profundo", obs: "Antídoto Cumarínicos (Varfarina)." }
+    ];
+
+    // ELEMENTOS DOM
+    const listElement = document.getElementById('drug-list');
+    const searchInput = document.getElementById('search-input');
+    const noResults = document.getElementById('no-results');
+    const listTitle = document.getElementById('list-title');
+
+    // DELEGAÇÃO DE EVENTOS
+    listElement.addEventListener('click', (e) => {
+        const header = e.target.closest('.card-header');
+        if (!header) return; 
+        const card = header.parentElement;
+        card.classList.toggle('active');
+    });
+
+    // FUNÇÃO DE RENDERIZAÇÃO
+    function renderDrugs(filterText = '') {
+        listElement.innerHTML = ''; 
+        let filtered = [];
+
+        // Lógica de visualização: Top 10 vs Busca
+        if (filterText.trim() === '') {
+            filtered = drugs.filter(drug => drug.isTop10);
+            listTitle.textContent = "Principais Medicamentos";
+            listTitle.style.display = 'block';
+        } else {
+            filtered = drugs.filter(drug =>
+                drug.name.toLowerCase().includes(filterText.toLowerCase())
+            );
+            listTitle.textContent = `Resultados para "${filterText}"`;
+            listTitle.style.display = 'block';
+        }
+
+        if (filtered.length === 0) {
+            noResults.style.display = 'block';
+            listTitle.style.display = 'none';
+            return;
+        } else {
+            noResults.style.display = 'none';
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        filtered.forEach(drug => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const renalClass = drug.renal_adjust === "Sim" ? "badge-renal-sim" : "badge-renal-nao";
+
+            card.innerHTML = `
+                <button class="card-header">
+                    <span class="drug-name">${drug.name}</span>
+                    <div class="badges">
+                        <span class="badge badge-via">${drug.via}</span>
+                        <span class="badge ${renalClass}">Renal: ${drug.renal_adjust}</span>
+                    </div>
+                </button>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">Apresentação</span>
+                            <span class="value">${drug.concentration}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Reconstituição</span>
+                            <span class="value">${drug.reconstitution}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Diluente Padrão</span>
+                            <span class="value">${drug.diluent}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Estabilidade (Diluído)</span>
+                            <span class="value">${drug.stability_diluted}</span>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <span class="label">Tempo de Infusão</span>
+                            <span class="value">${drug.infusion_time}</span>
+                        </div>
+                    </div>
+                    <div class="alert-box">
+                        <strong>Observações:</strong> ${drug.obs}
+                    </div>
+                </div>
+            `;
+            fragment.appendChild(card);
+        });
+        
+        listElement.appendChild(fragment);
+    }
+
+    // EVENT LISTENER DE BUSCA COM DEBOUNCE
+    let timeoutId;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            renderDrugs(e.target.value);
+        }, 300);
+    });
+
+    // RENDERIZAÇÃO INICIAL
+    renderDrugs();
+
+</script>
+
+</body>
+</html>
