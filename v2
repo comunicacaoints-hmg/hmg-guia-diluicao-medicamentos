@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Rápido: Diluição de Medicamentos</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #searchInput:focus {
+            border-color: var(--primary);
+        }
+
+        .accordion {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .accordion-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .accordion-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .accordion-header:hover {
+            background-color: #fdfdfd;
+        }
+
+        .accordion-header::after {
+            content: '\25BC';
+            font-size: 14px;
+            color: var(--text-muted);
+            transition: transform 0.3s;
+        }
+
+        .accordion-item.active .accordion-header::after {
+            transform: rotate(-180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            background-color: #fafafa;
+        }
+
+        .accordion-item.active .accordion-content {
+            max-height: 1200px; 
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-box {
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .obs-box {
+            grid-column: 1 / -1;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .obs-box .detail-label {
+            color: #856404;
+        }
+
+        .obs-box .detail-value {
+            color: #856404;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Guia Rápido de Diluição</h1>
+        <p>Consulte vias, diluentes, estabilidade e observações. (Base: HMG)</p>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Digite o nome do medicamento para buscar...">
+    </div>
+
+    <div class="accordion" id="accordionContainer">
+        </div>
+</div>
+
+<script>
+    // Dados atualizados extraídos do arquivo HMG-DiluicaoMedicamentosInjetaveis.xlsx
+    const medicamentos = [
+        { nome: 'Acetilcisteína 100 mg/mL 3 mL', via: 'EV ou Inalatório', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5% (EV) ou SF 0,9% (inalatório)', tempo: 'Infundir em 1 hora (1ª dose), 4 horas (2ª dose), 16 horas (3ª dose) total 21h', estabDil: '24 horas TA', dilPadrao: 'Seguir padrão de tempo de infusão', ajuste: 'Não', obs: 'Iniciar terapia até 8h após ingestão. Ajustar volumes para crianças/restrição hídrica.' },
+        { nome: 'Aciclovir 250 mg pó F/A', via: 'EV', rec: 'AD 10 mL', estabRec: '12 horas TA', diluente: 'SF 0,9% ou SG 5%', tempo: 'Lento (geralmente > 60 min)', estabDil: '12 horas TA', dilPadrao: 'Diluir 250 mg em 100 mL (máx 5 mg/mL)', ajuste: 'Sim', obs: 'Não refrigerar (risco de precipitação). Não administrar em bolus. Ver tabela de ajuste por ClCr.' },
+        { nome: 'Ácido tranexâmico 50 mg/mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: '30 a 60 minutos', estabDil: '24 horas TA', dilPadrao: '25 a 250 mL', ajuste: 'Sim', obs: 'Administração rápida pode causar hipotensão ou bradicardia. Ajuste conforme creatinina sérica.' },
+        { nome: 'Adenosina 3 mg/mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% (irrigação do acesso)', tempo: 'Rápido / Bolus', estabDil: 'Sobras devem ser descartadas', dilPadrao: 'Sem diluição', ajuste: 'Não', obs: 'Não refrigerar (risco de cristalização). Irrigar acesso com 20 mL de SF 0,9% após dose.' },
+        { nome: 'Alfaepoetina 4000 UI', via: 'SC', rec: 'Vem com diluente próprio', estabRec: '-', diluente: '-', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: '-' },
+        { nome: 'Alteplase 50 mg/50 mL F/A', via: 'EV', rec: 'Vem com diluente próprio 50 mL', estabRec: '24h refrigeração ou 8h TA', diluente: 'SF 0,9%', tempo: '-', estabDil: '8 horas TA', dilPadrao: 'Concentração mínima de 0,2 mg/mL (250 mL)', ajuste: 'Não', obs: 'Dose máxima total de 100 mg. Ajustar peso se < 65 kg.' },
+        { nome: 'Amicacina, Sulfato 500 mg/2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: '30-60 min', estabDil: '24h TA ou 24h refrigeração', dilPadrao: '100 a 200 mL (máx 5 mg/mL)', ajuste: 'Sim', obs: 'Não fazer em bolus. Ver tabela de ajuste por ClCr.' },
+        { nome: 'Aminofilina 24 mg/mL amp 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: '20 a 30 minutos (não exceder 25 mg/min)', estabDil: '24 horas TA', dilPadrao: '50 a 250 mL', ajuste: 'Não', obs: 'IM é dolorosa e deve ser profunda.' },
+        { nome: 'Amiodarona 50 mg/3 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5%', tempo: 'Bolus: mín 3 min. Infusão: 20 min a 2h', estabDil: '24 horas TA', dilPadrao: 'Concentração máxima de 3 mg/mL', ajuste: 'Não', obs: 'Diluir apenas em SG 5%. Proteger da luz. Preferir acesso central se > 2 mg/mL.' },
+        { nome: 'Ampicilina 1 g F/A', via: 'EV ou IM', rec: 'IM: 3 mL AD; EV: 5 a 10 mL AD', estabRec: 'Uso imediato', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 3-5 min. Infusão: 15-30 min', estabDil: '8 horas TA', dilPadrao: 'Infusão: 100 mL; Bolus: 20 mL', ajuste: 'Não', obs: 'Administrar lentamente para evitar convulsões. Dose máx adultos: 3 g/dia.' },
+        { nome: 'Ampicilina 2 g + Sulbactam 1 g F/A', via: 'EV ou IM', rec: '6 mL AD (EV) ou AD/Lidocaína (IM)', estabRec: 'IM: 1 hora', diluente: 'SG 5% ou SF 0,9%', tempo: 'Bolus: 5-10 min. Infusão: 15-30 min', estabDil: 'SF: 8h TA; SG: 4h TA', dilPadrao: '100 mL', ajuste: 'Sim', obs: 'Máximo 4 g Sulbactam/dia. Ajustar frequência em IR grave.' },
+        { nome: 'Anidulafungina 100 mg F/A', via: 'EV', rec: 'AD para injetáveis', estabRec: '24 horas sob refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Velocidade de 1,1 mg/min', estabDil: '2h TA ou 24h refrigeração', dilPadrao: '100 mg em 100 mL', ajuste: '-', obs: 'Ver outros volumes por dose na fonte.' },
+        { nome: 'Atropina, Sulfato 0,25 mg/mL', via: 'EV, IM, SC ou Intratecal', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: 'Bolus: 1 minuto', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Aplicar de forma rápida para evitar desaceleração cardíaca paradoxal.' },
+        { nome: 'Azitromicina 500 mg F/A', via: 'EV', rec: 'AD 4,8 mL', estabRec: '24 horas TA', diluente: 'SF 0,9% ou SG 5%', tempo: '60 min (250 mL) a 3 horas (500 mL)', estabDil: '24 horas TA', dilPadrao: '250 a 500 mL', ajuste: 'Não', obs: 'Administração somente por infusão. Concentração máx 2 mg/mL.' },
+        { nome: 'Bicarbonato 8,4% (10 mL e 250 mL)', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: Puro ou 1:1. Infusão: 2 horas', estabDil: '24 horas TA', dilPadrao: '0,5 mEq/mL (Diluição 1:1)', ajuste: '-', obs: 'Vesicante. Velocidade máx: 1 mEq/kg/h.' },
+        { nome: 'Bromoprida 5 mg/mL 2 mL', via: 'IM ou EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'EV: lento por 3 minutos', estabDil: '24 horas TA', dilPadrao: '10 a 20 mL', ajuste: 'Sim', obs: 'Iniciar com metade da dose em pacientes renais. IM profunda.' },
+        { nome: 'Cefazolina 1 g F/A', via: 'IM ou EV', rec: 'IM: 2,5 mL AD/Lidoc; EV: 5-10 mL AD', estabRec: '12h TA ou 24h refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 3-5 min. Infusão: 30-60 min', estabDil: '12h TA ou 24h refrigeração', dilPadrao: '50 a 100 mL', ajuste: 'Sim', obs: 'Se reconstituído com lidocaína, não fazer EV. Ver ajuste por ClCr.' },
+        { nome: 'Cefepima 1 g e 2 g F/A', via: 'IM ou EV', rec: 'IM: 3 mL AD/Lidoc; EV: 10 mL SF ou AD', estabRec: '4h TA ou 3 dias refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 5 min. Infusão: 30 minutos', estabDil: '12h TA ou 3 dias refrigeração', dilPadrao: 'Infusão: 50 a 100 mL; Bolus: 20 mL', ajuste: 'Sim', obs: 'Não fazer EV se tiver lidocaína. IM profunda. Ver doses por ClCr.' },
+        { nome: 'Ceftriaxona 1 g F/A', via: 'EV ou IM', rec: 'IM: 3,5 mL Lidoc 1%; EV: 5-10 mL AD', estabRec: '6h TA ou 24h refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 2-4 min. Infusão: 30 minutos', estabDil: '6h TA ou 24h refrigeração', dilPadrao: '100 mL', ajuste: 'Não', obs: 'RN até 12 anos: 20-80 mg/kg.' },
+        { nome: 'Clindamicina, fosfato 600 mg/mL 4 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: '30 a 60 minutos (máx 30 mg/min)', estabDil: '24h TA ou 48h refrigeração', dilPadrao: '50 a 100 mL', ajuste: 'Não', obs: 'Não fazer EV Direto (Bolus). IM máx 600 mg.' },
+        { nome: 'Clonidina 150 mcg/mL 1 mL', via: 'IM, EV, Intratecal ou Epidural', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: 'EV bolus: > 5 min; Epidural: > 10 min', estabDil: '24 horas TA', dilPadrao: 'Bolus: 10 mL; Infusão: 100-500 mL', ajuste: 'Não', obs: 'IM profunda.' },
+        { nome: 'Cloreto de Cálcio 10% amp 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Infusão lenta (máx 100 mg/min)', estabDil: '24 horas TA', dilPadrao: 'Concentração de 20 mg/mL', ajuste: 'Não', obs: 'Vesicante, preferir acesso central. Evitar bolus exceto emergência.' },
+        { nome: 'Cloreto de Potássio 19,1% 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Periférico: 10 mEq/h; Central: 40 mEq/h', estabDil: '24 horas TA', dilPadrao: 'Periférico: 10 mEq/100 mL; Central: 20-40 mEq/100 mL', ajuste: 'Não', obs: 'NUNCA EV Direto ou IM. Máx 200 mEq/dia.' },
+        { nome: 'Cloreto de Sódio 20% amp 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Não ultrapassar 1 mEq/kg/h', estabDil: '24 horas TA', dilPadrao: '1 mEq/kg/h', ajuste: 'Não', obs: 'NUNCA administrar IM ou EV direto (Bolus). Usar bomba de infusão.' },
+        { nome: 'Clorpromazina, Cloridrato 5 mg/mL 5 mL', via: 'IM', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Aplicação IM profunda no quadrante superior do glúteo.' },
+        { nome: 'Deslanosídeo 0,2 mg/mL 2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: lento em 5 min', estabDil: 'Uso imediato', dilPadrao: 'Proporção 1:4', ajuste: 'Não', obs: 'IM: Máx 2 mL por sítio.' },
+        { nome: 'Dexametasona, Fosfato 4 mg/mL 2,5 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: lento. Infusão: 15 a 30 min', estabDil: '24 horas TA', dilPadrao: '50 a 100 mL', ajuste: 'Sim', obs: 'IM profunda. Em choque, usar exclusivamente EV.' },
+        { nome: 'Dexmedetomidina 200 mcg/2 mL amp', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: 'Infusão contínua', estabDil: '24 horas TA', dilPadrao: '48 mL para cada 2 mL de medicação', ajuste: 'Não', obs: 'Usar bomba de infusão. Não fazer bolus.' },
+        { nome: 'Dextrocetamina 50 mg/mL 2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Contínua: 2 a 7 mcg/kg/min', estabDil: '24 horas TA', dilPadrao: 'Concentração máx de 2 mg/mL', ajuste: 'Não', obs: 'Dose máx adulto EV: 4,5 mg/kg.' },
+        { nome: 'Diazepam 5 mg/mL 2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: Adulto 5 mg/min; Criança 2 mg/min', estabDil: 'Descartar sobras', dilPadrao: '10 a 20 mL', ajuste: 'Não', obs: 'Rápida pode causar apneia. Ter instrumental de reanimação.' },
+        { nome: 'Diclofenaco de Sódio 75 mg/3 mL', via: 'IM', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Sim', obs: 'Contraindicado em insuficiência renal. Não indicado para < 14 anos.' },
+        { nome: 'Diminidrinato + Piridoxina + Glicose + Frutose', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: 'Bolus: mín 3 min. Infusão: 30 min', estabDil: '-', dilPadrao: '10 a 100 mL', ajuste: 'Não', obs: 'Usar com precaução em renais. Hepáticos: reduzir dose.' },
+        { nome: 'Dipirona Sódica 1 g/2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou AD', tempo: 'Bolus: 1 mL/min', estabDil: 'Uso imediato', dilPadrao: '20 a 100 mL', ajuste: 'Não', obs: 'Crianças < 1 ano: apenas IM.' },
+        { nome: 'Dobutamina, Cloridrato 12,5 mg/mL 20 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Velocidade de 2,5 a 20 mcg/kg/min', estabDil: '24 horas TA', dilPadrao: '50 a 250 mL', ajuste: 'Não', obs: 'Obrigatório bomba de infusão. Não congelar.' },
+        { nome: 'Dopamina, Cloridrato 5 mg/mL 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Dose máx adulto: 50 mcg/kg/min', estabDil: '24 horas TA', dilPadrao: '250 a 500 mL', ajuste: 'Não', obs: 'Fotossensível. Uso exclusivo em bomba de infusão.' },
+        { nome: 'Epinefrina 1 mg/mL amp 1 mL', via: 'SC, IM ou EV', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5% ou SF 0,9%', tempo: 'Contínua: iniciar com 1 mcg/min', estabDil: '24 horas TA (protegida)', dilPadrao: 'Concentração máx de 1:10.000', ajuste: 'Não', obs: 'Para infusão contínua, usar acesso central.' },
+        { nome: 'Escopolamina, Butilbrometo 20 mg/mL 1 mL', via: 'EV, IM ou SC', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 2-3 min. Infusão: 30 min', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: 'Não exceder 100 mg/dia em adultos.' },
+        { nome: 'Escopolamina + Dipirona amp 5 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: mín 5 min. Infusão: 1 mL/min', estabDil: 'Descartar sobras', dilPadrao: 'EV: 20 mL; Infusão: 50-100 mL', ajuste: 'Não', obs: 'IM deve ser profunda.' },
+        { nome: 'Etilefrina 10 mg/mL 1 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'EV lenta ou infusão (Adulto 0,4 mg/min)', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Não exceder dose máx diária (Adulto 50 mg).' },
+        { nome: 'Etomidato 2 mg/mL amp 10 mL', via: 'EV', rec: 'Pronto para uso', estabRec: '-', diluente: '-', tempo: 'Administrar lentamente', estabDil: 'Descartar após o uso', dilPadrao: '-', ajuste: 'Não', obs: 'Sem atividade analgésica. Máximo 3 ampolas.' },
+        { nome: 'Fenitoína Sódica 50 mg/mL amp 5 mL', via: 'EV e IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: '15-30 min (20-50 mg/min)', estabDil: 'Uso imediato', dilPadrao: 'Não exceder 50 mg/min', ajuste: 'Não', obs: 'SG precipita o produto (não usar).' },
+        { nome: 'Fenobarbital 100 mg/mL amp 2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 3-5 min. Infusão: 10-15 min', estabDil: '24 horas TA', dilPadrao: '20 a 100 mL', ajuste: 'Não', obs: 'Adulto: máx 60 mg/min; Criança 30 mg/min.' },
+        { nome: 'Fentanila Citrato 0,05 mg/mL 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Conforme protocolo', estabDil: '24 horas TA', dilPadrao: 'Não há necessidade', ajuste: 'Sim', obs: 'Monitorar toxicidade em renais. Usar bomba de infusão.' },
+        { nome: 'Fluconazol 2 mg/mL bolsa 100 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'Pronto para uso', tempo: '60 a 120 minutos', estabDil: '-', dilPadrao: '-', ajuste: 'Sim', obs: 'Ver ajuste % conforme ClCr na fonte.' },
+        { nome: 'Flumazenil 0,5 mg/5 mL amp 5 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 15 a 30 seg (máx 0,2 mg/min)', estabDil: '24 horas TA', dilPadrao: '-', ajuste: 'Não', obs: 'Apenas para crianças acima de 1 ano.' },
+        { nome: 'Furosemida 10 mg/mL amp 2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: 'Velocidade Adulto: 4 mg/min', estabDil: '24 horas TA', dilPadrao: '20 a 50 mL', ajuste: 'Sim', obs: 'IR severa: não exceder 2,5 mg/min. Não refrigerar.' },
+        { nome: 'Gentamicina, Sulfato 80 mg/mL amp 2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: '30 a 120 min (máx 10 mg/mL)', estabDil: '2h TA ou 24h refrigeração', dilPadrao: '50 a 250 mL', ajuste: 'Sim', obs: 'Ver tabela de ajuste de intervalo por ClCr.' },
+        { nome: 'Glicose 50% amp 10 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'AD para injetáveis', tempo: 'Bolus lento', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: 'Adultos: 10 a 25 g. Avaliar glicemia antes.' },
+        { nome: 'Haloperidol 5 mg/mL amp 1 mL', via: 'IM', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Máximo 3 mL por sítio de injeção.' },
+        { nome: 'Heparina Sódica (5.000 UI/mL)', via: 'EV ou SC', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Infusão contínua em bomba', estabDil: '24 horas TA', dilPadrao: '50 a 500 mL', ajuste: 'Sim', obs: 'Contraindicado em IR/IH severa. Agitar bolsa a cada 4h.' },
+        { nome: 'Hidrocortisona, Succinato 100 mg F/A', via: 'EV ou IM', rec: '2 mL de AD', estabRec: '24h TA ou 72h refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 3-5 min. Infusão: 30 a 60 min', estabDil: '24h TA ou 72h refrigeração', dilPadrao: 'Bolus máx 25 mg/mL; Infusão máx 1 mg/mL', ajuste: 'Não', obs: 'Restrição hídrica: máx 25 mg/mL.' },
+        { nome: 'Insulina NPH Humana 100 UI/mL 10 mL', via: 'SC', rec: 'Não necessita', estabRec: '-', diluente: 'Pronta para aplicação', tempo: 'Conforme glicemia', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Conservar 2-8°C. Após aberto, 28 dias.' },
+        { nome: 'Insulina Regular Humana 100 UI/mL', via: 'SC ou EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% (se EV)', tempo: 'Infusão: Saturar equipo 30 min antes', estabDil: '6 horas TA', dilPadrao: '0,05 a 1 UI/mL em 100 mL', ajuste: 'Não', obs: 'Trocar bolsa a cada 6h. Manter sob refrigeração.' },
+        { nome: 'Levofloxacino 5 mg/mL bolsa 100 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'Pronto para administrar', tempo: '60 a 90 min', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: '-' },
+        { nome: 'Lidocaína + Epinefrina F/A 20 mL', via: 'Parenteral', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: 'Máx 7 mg/kg (adulto)', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: 'Dose máx total 500 mg.' },
+        { nome: 'Lidocaína sem vaso 20 mg/mL F/A', via: 'Parenteral', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: 'Máx 4,5 mg/kg', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: 'Dose máx total 300 mg.' },
+        { nome: 'Meropenem 1 g F/A', via: 'EV', rec: 'AD 20 mL', estabRec: '2h TA ou 12h refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 5 min. Infusão: 15-30 min', estabDil: '4h TA ou 24h refrigeração', dilPadrao: 'Bolus: 20 mL; Infusão: 100 mL', ajuste: 'Sim', obs: 'Ver tabela de ajuste por ClCr.' },
+        { nome: 'Metadona 10 mg/mL amp 1 mL', via: 'IM ou SC', rec: 'Não', estabRec: '-', diluente: 'Pronta para aplicação', tempo: '-', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: 'Adultos: 2,5 a 10 mg a cada 3 ou 4 horas.' },
+        { nome: 'Metoclopramida, Cloridrato 5 mg/mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 3 min. Infusão: 15-30 min', estabDil: '24 horas TA', dilPadrao: 'Bolus: 10-20 mL; Infusão: 50 mL', ajuste: 'Sim', obs: 'Reduzir 50-75% se ClCr < 60.' },
+        { nome: 'Metoprolol 1 mg/mL amp 5 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 5 mg em 2 min', estabDil: '12 horas TA', dilPadrao: '-', ajuste: 'Não', obs: 'Preferencialmente sem diluição.' },
+        { nome: 'Metronidazol 5 mg/mL bolsa 100 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'Pronto para administrar', tempo: '30 a 60 minutos', estabDil: 'Descartar sobras', dilPadrao: '-', ajuste: 'Não', obs: '-' },
+        { nome: 'Midazolam (15 mg/3 mL e 50 mg/10 mL)', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 2-5 min', estabDil: '24 horas TA', dilPadrao: '-', ajuste: 'Não', obs: 'Infusão contínua em bomba.' },
+        { nome: 'Morfina, Sulfato (1 mg/mL e 10 mg/mL)', via: 'EV, IM, Epidural, Intrat.', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 3-5 min. Infusão: 15-30 min', estabDil: '24 horas TA', dilPadrao: '-', ajuste: 'Não', obs: 'Intratecal/Epidural: usar sem conservantes.' },
+        { nome: 'Naloxona 0,4 mg/mL 1 mL', via: 'EV, IM ou SC', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: '-', estabDil: '24 horas TA', dilPadrao: '100 a 500 mL', ajuste: 'Não', obs: 'Bolus 0,04 mg/mL. Infusão 0,004 mg/mL.' },
+        { nome: 'Neostigmina 0,5 mg/mL', via: 'SC, IM ou EV', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: 'Bolus lento (3 minutos)', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Pode ser administrado puro.' },
+        { nome: 'Nitroglicerina 5 mg/mL amp 5 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Concentração 100 mcg/mL', estabDil: '24 horas TA', dilPadrao: '250 mL', ajuste: 'Não', obs: 'Usar frascos sem PVC. Bomba obrigatória.' },
+        { nome: 'Nitroprussiato de Sódio 25 mg/mL', via: 'EV', rec: '2 mL SG 5%', estabRec: '4h Protegido da Luz', diluente: 'SG 5%', tempo: 'Concentração máx 0,2 mg/mL', estabDil: '24 horas TA (protegida)', dilPadrao: '250 mL', ajuste: 'Não', obs: 'Fotossensível. Bomba obrigatória.' },
+        { nome: 'Norepinefrina 2 mg/mL amp 4 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5%', tempo: 'Concentração máx: 32 mg/250 mL', estabDil: '24 horas TA (protegida)', dilPadrao: '250 mL', ajuste: 'Não', obs: 'Fotossensível. Bomba obrigatória.' },
+        { nome: 'Omeprazol 40 mg F/A', via: 'EV', rec: 'Diluente próprio (10 mL)', estabRec: '4 horas TA', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 4 mL/min', estabDil: 'SF: 12h TA; SG: 6h TA', dilPadrao: 'Infusão: 100 mL', ajuste: 'Não', obs: 'Administrar lentamente.' },
+        { nome: 'Ondansetrona, Cloridrato 2 mg/mL', via: 'EV e IM', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5% ou SF 0,9%', tempo: 'Bolus: 2-5 min. Infusão: 15 min', estabDil: '24 horas TA', dilPadrao: '20 a 100 mL', ajuste: 'Não', obs: '-' },
+        { nome: 'Oxacilina Sódica 500 mg F/A', via: 'EV ou IM', rec: 'IM: 2,7 mL AD; EV: 5 mL AD', estabRec: '72h refrigeração (protegido)', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: 10 min. Infusão: 30 min', estabDil: '6 horas TA', dilPadrao: 'Máx 0,5 a 40 mg/mL', ajuste: 'Não', obs: 'Cuidado com tromboflebite em EV.' },
+        { nome: 'Piperacilina + Tazobactam 500 mg', via: 'EV', rec: '20 mL AD ou SF', estabRec: '24h TA ou 48h refrigeração', diluente: 'SF 0,9% ou SG 5%', tempo: 'Infusão: 20 a 30 minutos', estabDil: '24h TA ou 48h refrigeração', dilPadrao: '50 a 150 mL', ajuste: 'Sim', obs: 'Bolus não recomendado. Ver ajuste por ClCr.' },
+        { nome: 'Polimixicina B 500.000 UI F/A', via: 'EV, IM ou Intratecal', rec: 'EV: 2 mL AD/SF; Int.: 2 mL SF', estabRec: '-', diluente: 'SG 5% ou SF 0,9%', tempo: 'Infusão: 60 a 90 minutos', estabDil: '24h TA ou 72h refrigeração', dilPadrao: '300 a 500 mL', ajuste: 'Sim', obs: 'Ajuste por ClCr necessário. IM não recomendada.' },
+        { nome: 'Prometazina, Cloridrato 25 mg/mL', via: 'IM', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'EV não recomendada. IM profunda.' },
+        { nome: 'Propofol 10 mg/mL amp 20 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5%', tempo: 'Conforme necessidade (bomba)', estabDil: '12h TA (puro); 6h TA (diluído)', dilPadrao: '-', ajuste: 'Não', obs: 'Diluição máx 1:5. Usar em > 3 anos.' },
+        { nome: 'Rocurônio 10 mg/mL 5 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SG 5% ou SF 0,9%', tempo: 'Bolus rápido ou contínua', estabDil: '24 horas TA', dilPadrao: '0,5 a 2 mg/mL', ajuste: 'Não', obs: '-' },
+        { nome: 'Solução de Manitol 20% 250 mL', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'Bolsa pronta para uso', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Pode cristalizar. Redissolver a 60-80°C.' },
+        { nome: 'Sulfametoxazol + Trimetoprima', via: 'EV', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: '30 a 60 minutos', estabDil: 'Ver Observações', dilPadrao: '1 ampola em 125 mL', ajuste: 'Sim', obs: 'Estabilidade: 75 mL (2h TA), 125 mL (6h TA).' },
+        { nome: 'Sulfato de Magnésio 10% amp 10 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Concentração máx 100 mg/mL', estabDil: 'Uso imediato', dilPadrao: '-', ajuste: 'Não', obs: '-' },
+        { nome: 'Suxametônio 100 mg F/A', via: 'EV ou IM', rec: '2 a 10 mL AD', estabRec: '24h refrigeração', diluente: 'SG 5% ou SF 0,9%', tempo: 'Infusão: 0,5 a 10 mL/min', estabDil: '24 horas TA', dilPadrao: '-', ajuste: 'Não', obs: 'Neonatos: risco hipertermia maligna.' },
+        { nome: 'Terbutalina 0,5 mg/mL amp 1 mL', via: 'EV ou SC', rec: 'Não necessita', estabRec: '-', diluente: '1000 mL SG 5%', tempo: '20 a 30 gotas/min', estabDil: '12 horas TA', dilPadrao: '1000 mL', ajuste: 'Não', obs: 'Evitar salina (risco edema pulmonar).' },
+        { nome: 'Tramadol, Cloridrato 100 mg/2 mL', via: 'EV ou IM', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9%', tempo: '-', estabDil: 'Descartar sobras', dilPadrao: '100 mL', ajuste: 'Não', obs: 'Dose diária máx em crianças: 8 mg/kg.' },
+        { nome: 'Vancomicina, Cloridrato 500 mg F/A', via: 'EV', rec: '10 mL AD', estabRec: '24 horas TA', diluente: 'SF 0,9% ou SG 5%', tempo: '60 a 120 minutos', estabDil: '24 horas TA', dilPadrao: '100 a 500 mL', ajuste: 'Sim', obs: 'Ver ajuste por ClCr.' },
+        { nome: 'Vasopressina 20 UI/mL amp 1 mL', via: 'EV, IM ou SC', rec: 'Não necessita', estabRec: '-', diluente: 'SF 0,9% ou SG 5%', tempo: 'Bolus: lento. Contínua: 0,2 UI/min', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Infusão: preferir acesso central.' },
+        { nome: 'Vitamina K (Fitomenadiona) 10 mg/mL', via: 'IM', rec: 'Não necessita', estabRec: '-', diluente: '-', tempo: '-', estabDil: '-', dilPadrao: '-', ajuste: 'Não', obs: 'Fotossensível. Antídoto para varfarina.' }
+    ];
+
+    // Top 10 Medicamentos definidos para o carregamento inicial
+    const top10Nomes = [
+        'Amiodarona 50 mg/3 mL', 
+        'Ceftriaxona 1 g F/A', 
+        'Dipirona Sódica 1 g/2 mL', 
+        'Dobutamina, Cloridrato 12,5 mg/mL 20 mL', 
+        'Epinefrina 1 mg/mL amp 1 mL', 
+        'Fentanila Citrato 0,05 mg/mL 10 mL', 
+        'Midazolam (15 mg/3 mL e 50 mg/10 mL)', 
+        'Morfina, Sulfato (1 mg/mL e 10 mg/mL)', 
+        'Norepinefrina 2 mg/mL amp 4 mL', 
+        'Propofol 10 mg/mL amp 20 mL'
+    ];
+
+    const top10 = medicamentos.filter(med => top10Nomes.includes(med.nome));
+
+    const container = document.getElementById('accordionContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    function renderAccordion(lista) {
+        container.innerHTML = '';
+
+        if (lista.length === 0) {
+            container.innerHTML = '<div class="no-results">Nenhum medicamento encontrado. Tente outro termo.</div>';
+            return;
+        }
+
+        lista.forEach(med => {
+            const item = document.createElement('div');
+            item.className = 'accordion-item';
+
+            item.innerHTML = `
+                <div class="accordion-header">${med.nome}</div>
+                <div class="accordion-content">
+                    <div class="details-grid">
+                        <div class="detail-box">
+                            <span class="detail-label">Via de Administração</span>
+                            <span class="detail-value">${med.via}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Reconstituição</span>
+                            <span class="detail-value">${med.rec}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Estab. Reconstituída</span>
+                            <span class="detail-value">${med.estabRec}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Diluente Compatível</span>
+                            <span class="detail-value">${med.diluente}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Tempo de Infusão</span>
+                            <span class="detail-value">${med.tempo}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Estab. da Diluição</span>
+                            <span class="detail-value">${med.estabDil}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Diluição Padrão</span>
+                            <span class="detail-value">${med.dilPadrao}</span>
+                        </div>
+                        <div class="detail-box">
+                            <span class="detail-label">Ajuste Renal</span>
+                            <span class="detail-value">${med.ajuste}</span>
+                        </div>
+                        <div class="detail-box obs-box">
+                            <span class="detail-label">Observações Importantes</span>
+                            <span class="detail-value">${med.obs}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Lógica de click da sanfona
+            const header = item.querySelector('.accordion-header');
+            header.addEventListener('click', () => {
+                document.querySelectorAll('.accordion-item').forEach(el => {
+                    if (el !== item) el.classList.remove('active');
+                });
+                item.classList.toggle('active');
+            });
+
+            container.appendChild(item);
+        });
+    }
+
+    // Filtro de busca
+    searchInput.addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase().trim();
+        
+        if (termo === '') {
+            renderAccordion(top10);
+        } else {
+            const resultados = medicamentos.filter(med => 
+                med.nome.toLowerCase().includes(termo)
+            );
+            renderAccordion(resultados);
+            
+            if(resultados.length === 1) {
+               document.querySelector('.accordion-item').classList.add('active');
+            }
+        }
+    });
+
+    // Renderiza inicialmente os 10 principais
+    renderAccordion(top10);
+
+</script>
+</body>
+</html>
