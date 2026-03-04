@@ -259,15 +259,12 @@
 </div>
 
 <script>
-    // =========================================================================
-    // IMPORTANTE: Substitua a frase abaixo pelo link CSV da sua planilha!
-    // =========================================================================
-    const urlPlanilha = 'https://docs.google.com/spreadsheets/d/1H1FUB4f2YGNXOHVO510H8qh7Iyo25bMpWdxx6UTFDIc/edit?usp=sharing';
+    // Link corrigido para forçar a exportação do CSV
+    const urlPlanilha = 'https://docs.google.com/spreadsheets/d/1H1FUB4f2YGNXOHVO510H8qh7Iyo25bMpWdxx6UTFDIc/export?format=csv';
 
     let medicamentos = [];
     let top10 = [];
 
-    // Busca pela palavra-chave, ignorando apresentações complexas
     const top10Nomes = [
         'Amiodarona', 'Ceftriaxona', 'Dipirona', 'Dobutamina', 'Epinefrina', 
         'Fentanila', 'Midazolam', 'Morfina', 'Norepinefrina', 'Propofol'
@@ -277,12 +274,6 @@
     const searchInput = document.getElementById('searchInput');
 
     function carregarDados() {
-        // Trava de segurança para avisar se o link não foi trocado
-        if (urlPlanilha === 'https://docs.google.com/spreadsheets/d/1H1FUB4f2YGNXOHVO510H8qh7Iyo25bMpWdxx6UTFDIc/edit?usp=sharing') {
-            container.innerHTML = '<div class="no-results" style="color: red; font-weight: bold;">⚠️ ATENÇÃO: Você precisa colar o link CSV da sua planilha na linha 257 do código!</div>';
-            return;
-        }
-
         Papa.parse(urlPlanilha, {
             download: true,
             header: true,
@@ -290,7 +281,6 @@
             complete: function(results) {
                 medicamentos = results.data;
                 
-                // Filtra os top 10 buscando a palavra-chave no nome do medicamento
                 top10 = medicamentos.filter(med => {
                     const nomeMed = med['Nome do medicamento'] || med['Nome'] || '';
                     return top10Nomes.some(termoBusca => nomeMed.toLowerCase().includes(termoBusca.toLowerCase()));
@@ -318,7 +308,6 @@
             const item = document.createElement('div');
             item.className = 'accordion-item';
             
-            // Aceita tanto os nomes de colunas originais do Excel quanto versões sem acentos/espaços
             const nomeMed = med['Nome do medicamento'] || med['Nome'] || 'Sem Nome';
             const via = med['Via'] || '-';
             const rec = med['Reconstituição'] || med['Reconstituicao'] || '-';
@@ -330,7 +319,6 @@
             const ajuste = med['Ajuste renal'] || med['AjusteRenal'] || '-';
             const obs = med['Observações'] || med['Observacoes'] || '-';
 
-            // Só renderiza se tiver nome (evita linhas em branco no fim da planilha)
             if (!nomeMed || nomeMed === 'Sem Nome') return;
 
             item.innerHTML = `
