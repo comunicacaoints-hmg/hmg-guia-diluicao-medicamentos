@@ -99,6 +99,7 @@
         #searchInput:disabled {
             background-color: #f0f0f0;
             cursor: not-allowed;
+            border-color: #ccc;
         }
 
         .accordion {
@@ -202,6 +203,9 @@
             padding: 20px;
             color: var(--text-muted);
             font-style: italic;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
         }
         
         .loading-text {
@@ -250,62 +254,63 @@
     </div>
 
     <div class="accordion" id="accordionContainer">
-        <div class="no-results loading-text">⏳ Conectando com a base de dados...</div>
+        <div class="no-results loading-text" id="loadingMessage">⏳ Conectando com a base de dados...</div>
     </div>
 </div>
 
 <script>
-    // IMPORTANTE: Substitua a string abaixo pelo link CSV publicado da sua planilha do Google Sheets
-    const urlPlanilha = 'https://docs.google.com/spreadsheets/d/1H1FUB4f2YGNXOHVO510H8qh7Iyo25bMpWdxx6UTFDIc/edit?usp=sharing';
+    // =========================================================================
+    // IMPORTANTE: Substitua a frase abaixo pelo link CSV da sua planilha!
+    // =========================================================================
+    const urlPlanilha = 'COLE_AQUI_O_SEU_LINK_CSV';
 
     let medicamentos = [];
     let top10 = [];
 
-    // Nomes exatos dos 10 medicamentos que aparecerão na tela inicial
+    // Busca pela palavra-chave, ignorando apresentações complexas
     const top10Nomes = [
-        'Amiodarona 50 mg/3 mL', 
-        'Ceftriaxona 1 g F/A', 
-        'Dipirona Sódica 1 g/2 mL', 
-        'Dobutamina, Cloridrato 12,5 mg/mL 20 mL', 
-        'Epinefrina 1 mg/mL amp 1 mL', 
-        'Fentanila Citrato 0,05 mg/mL 10 mL', 
-        'Midazolam (15 mg/3 mL e 50 mg/10 mL)', 
-        'Morfina, Sulfato (1 mg/mL e 10 mg/mL)', 
-        'Norepinefrina 2 mg/mL amp 4 mL', 
-        'Propofol 10 mg/mL amp 20 mL'
+        'Amiodarona', 'Ceftriaxona', 'Dipirona', 'Dobutamina', 'Epinefrina', 
+        'Fentanila', 'Midazolam', 'Morfina', 'Norepinefrina', 'Propofol'
     ];
 
     const container = document.getElementById('accordionContainer');
     const searchInput = document.getElementById('searchInput');
 
-    // Função para buscar e processar os dados da planilha
     function carregarDados() {
+        // Trava de segurança para avisar se o link não foi trocado
+        if (urlPlanilha === 'COLE_AQUI_O_SEU_LINK_CSV') {
+            container.innerHTML = '<div class="no-results" style="color: red; font-weight: bold;">⚠️ ATENÇÃO: Você precisa colar o link CSV da sua planilha na linha 257 do código!</div>';
+            return;
+        }
+
         Papa.parse(urlPlanilha, {
             download: true,
-            header: true, // Avisa que a primeira linha da planilha tem os nomes das colunas
+            header: true,
             skipEmptyLines: true,
             complete: function(results) {
                 medicamentos = results.data;
                 
-                // Filtra a lista completa para montar a visualização inicial dos 10 principais
-                top10 = medicamentos.filter(med => top10Nomes.includes(med.Nome));
+                // Filtra os top 10 buscando a palavra-chave no nome do medicamento
+                top10 = medicamentos.filter(med => {
+                    const nomeMed = med['Nome do medicamento'] || med['Nome'] || '';
+                    return top10Nomes.some(termoBusca => nomeMed.toLowerCase().includes(termoBusca.toLowerCase()));
+                });
 
-                // Habilita a barra de busca e renderiza o top 10
                 searchInput.disabled = false;
+                searchInput.placeholder = "Digite o nome do medicamento para buscar...";
                 renderAccordion(top10);
             },
             error: function() {
-                container.innerHTML = '<div class="no-results" style="color: red;">❌ Erro ao carregar os dados. Verifique o link da planilha no código.</div>';
+                container.innerHTML = '<div class="no-results" style="color: red;">❌ Erro ao ler a planilha. Verifique se o link foi gerado corretamente como .csv.</div>';
             }
         });
     }
 
-    // Função que desenha a sanfona na tela
     function renderAccordion(lista) {
         container.innerHTML = '';
 
         if (lista.length === 0) {
-            container.innerHTML = '<div class="no-results">Nenhum medicamento encontrado. Tente outro termo.</div>';
+            container.innerHTML = '<div class="no-results">Nenhum medicamento encontrado. Verifique a ortografia.</div>';
             return;
         }
 
@@ -313,19 +318,23 @@
             const item = document.createElement('div');
             item.className = 'accordion-item';
             
-            // Garantindo que, se o campo estiver vazio na planilha, mostre um "-"
-            const via = med.Via || '-';
-            const rec = med.Reconstituicao || '-';
-            const estabRec = med.EstabilidadeReconstituicao || '-';
-            const diluente = med.Diluente || '-';
-            const tempo = med.TempoInfusao || '-';
-            const estabDil = med.EstabilidadeInfusao || '-';
-            const dilPadrao = med.DiluicaoPadrao || '-';
-            const ajuste = med.AjusteRenal || '-';
-            const obs = med.Observacoes || '-';
+            // Aceita tanto os nomes de colunas originais do Excel quanto versões sem acentos/espaços
+            const nomeMed = med['Nome do medicamento'] || med['Nome'] || 'Sem Nome';
+            const via = med['Via'] || '-';
+            const rec = med['Reconstituição'] || med['Reconstituicao'] || '-';
+            const estabRec = med['Estabilidade após reconstituição'] || med['EstabilidadeReconstituicao'] || '-';
+            const diluente = med['Diluente'] || '-';
+            const tempo = med['Tempo de infusão'] || med['TempoInfusao'] || '-';
+            const estabDil = med['Estabilidade após infusão'] || med['EstabilidadeInfusao'] || '-';
+            const dilPadrao = med['Diluição padrão'] || med['DiluicaoPadrao'] || '-';
+            const ajuste = med['Ajuste renal'] || med['AjusteRenal'] || '-';
+            const obs = med['Observações'] || med['Observacoes'] || '-';
+
+            // Só renderiza se tiver nome (evita linhas em branco no fim da planilha)
+            if (!nomeMed || nomeMed === 'Sem Nome') return;
 
             item.innerHTML = `
-                <div class="accordion-header">${med.Nome || 'Sem Nome'}</div>
+                <div class="accordion-header">${nomeMed}</div>
                 <div class="accordion-content">
                     <div class="details-grid">
                         <div class="detail-box">
@@ -368,10 +377,8 @@
                 </div>
             `;
 
-            // Lógica de click da sanfona
             const header = item.querySelector('.accordion-header');
             header.addEventListener('click', () => {
-                // Fecha as outras abas ao abrir uma nova
                 document.querySelectorAll('.accordion-item').forEach(el => {
                     if (el !== item) el.classList.remove('active');
                 });
@@ -382,21 +389,18 @@
         });
     }
 
-    // Listener para o campo de busca
     searchInput.addEventListener('input', (e) => {
         const termo = e.target.value.toLowerCase().trim();
         
         if (termo === '') {
-            // Volta para a lista principal se o campo for limpo
             renderAccordion(top10);
         } else {
-            // Filtra pela string digitada
-            const resultados = medicamentos.filter(med => 
-                med.Nome && med.Nome.toLowerCase().includes(termo)
-            );
+            const resultados = medicamentos.filter(med => {
+                const nomeMed = med['Nome do medicamento'] || med['Nome'] || '';
+                return nomeMed.toLowerCase().includes(termo);
+            });
             renderAccordion(resultados);
             
-            // Se retornar apenas 1 resultado, expande a sanfona automaticamente
             if(resultados.length === 1) {
                const firstItem = document.querySelector('.accordion-item');
                if (firstItem) firstItem.classList.add('active');
@@ -404,7 +408,6 @@
         }
     });
 
-    // Inicia a aplicação chamando a planilha
     carregarDados();
 
 </script>
