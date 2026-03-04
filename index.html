@@ -166,7 +166,7 @@
         }
 
         .accordion-item.active .accordion-content {
-            max-height: 1200px; 
+            max-height: 5000px; /* Limite aumentado para não cortar textos longos no telemóvel */
             padding: 20px;
             border-top: 1px solid var(--border);
         }
@@ -197,6 +197,8 @@
             font-size: 14px;
             color: var(--text-main);
             font-weight: 500;
+            white-space: pre-line; /* Respeita as quebras de linha feitas no Excel */
+            word-wrap: break-word; /* Impede que textos muito longos vazem da caixa */
         }
 
         .obs-box {
