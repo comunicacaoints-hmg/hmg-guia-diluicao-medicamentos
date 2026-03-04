@@ -35,12 +35,45 @@
 
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         h1 {
             color: var(--primary);
             margin-bottom: 10px;
+        }
+        
+        /* Estilos da Legenda */
+        .legend-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .legend-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px 15px;
+            font-size: 13px;
+        }
+
+        .legend-item strong {
+            color: var(--text-muted);
+            margin-right: 4px;
         }
 
         .search-container {
@@ -169,6 +202,9 @@
             .details-grid {
                 grid-template-columns: 1fr;
             }
+            .legend-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
@@ -179,6 +215,24 @@
         <h1>Guia Rápido de Diluição</h1>
         <p>Consulte vias, diluentes, estabilidade e observações. (Base: HMG)</p>
     </header>
+
+    <div class="legend-container">
+        <div class="legend-title">Guia de Siglas</div>
+        <div class="legend-grid">
+            <div class="legend-item"><strong>EV:</strong> Endovenosa</div>
+            <div class="legend-item"><strong>IM:</strong> Intramuscular</div>
+            <div class="legend-item"><strong>SC:</strong> Subcutânea</div>
+            <div class="legend-item"><strong>SF:</strong> Soro Fisiológico (0,9%)</div>
+            <div class="legend-item"><strong>SG:</strong> Soro Glicosado (5%)</div>
+            <div class="legend-item"><strong>AD:</strong> Água Destilada</div>
+            <div class="legend-item"><strong>TA:</strong> Temp. Ambiente</div>
+            <div class="legend-item"><strong>ClCr:</strong> Clearance de Creatinina</div>
+            <div class="legend-item"><strong>UI:</strong> Unidades Internac.</div>
+            <div class="legend-item"><strong>Lidoc:</strong> Lidocaína</div>
+            <div class="legend-item"><strong>Intrat:</strong> Intratecal</div>
+            <div class="legend-item"><strong>F/A:</strong> Frasco-Ampola</div>
+        </div>
+    </div>
 
     <div class="search-container">
         <input type="text" id="searchInput" placeholder="Digite o nome do medicamento para buscar...">
